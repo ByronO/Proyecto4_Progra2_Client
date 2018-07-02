@@ -22,12 +22,11 @@ public class JFrameClient extends javax.swing.JFrame {
     BufferedReader reader;
     PrintWriter send;
 
-    int size = 0, size2 = 0;
+    int size = 0, size2 = 0, cont = 0;
+    int quantityOfShips;
     Matrix matrix;
     Ship[][] matShips;
     Graphics g;
-    
-    
 
     //--------------------------//
     public void ListenThread() {
@@ -270,7 +269,7 @@ public class JFrameClient extends javax.swing.JFrame {
     }//GEN-LAST:event_tf_usernameActionPerformed
 
     private void b_connectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_b_connectActionPerformed
-        if (isConnected == false) {
+        if (isConnected == false && cont == quantityOfShips) {
             username = tf_username.getText();
             tf_username.setEditable(false);
 
@@ -279,6 +278,17 @@ public class JFrameClient extends javax.swing.JFrame {
                 InputStreamReader streamreader = new InputStreamReader(sock.getInputStream());
                 reader = new BufferedReader(streamreader);
                 send = new PrintWriter(sock.getOutputStream());
+                //guarda el tipo de cada posicion de la matriz en un string que se envia al servidor
+                String matrix = "";
+                for (int i = 0; i < size; i++) {
+                    for (int j = 0; j < size; j++) {
+                        matrix+= String.valueOf(this.matrix.getMatrix()[i][j].getType());
+                    }
+                }
+                System.err.println(matrix);
+                //aparte de las posiciones se envia el tamanno de la matriz
+                matrix += ";" + String.valueOf(size);
+                send.println(matrix);
                 send.println(username + ":has connected.:Connect");
                 send.flush();
                 isConnected = true;
@@ -322,9 +332,11 @@ public class JFrameClient extends javax.swing.JFrame {
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         if (jCBSize.getSelectedItem().toString().equals("3x3")) {
             size = 3;
+            quantityOfShips = 3;
             size2 = 210;
         } else {
             size = 5;
+            quantityOfShips = 5;
             size2 = 350;
         }
 
@@ -338,7 +350,7 @@ public class JFrameClient extends javax.swing.JFrame {
         b_connect.setEnabled(true);
         b_disconnect.setEnabled(true);
         b_send.setEnabled(true);
-        
+
 
     }//GEN-LAST:event_jButton1ActionPerformed
 
@@ -346,10 +358,16 @@ public class JFrameClient extends javax.swing.JFrame {
         if (size == 3) {
             if (evt.getX() < 210 && evt.getY() < 210) {
                 try {
-                    this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].setType(1);
-                    this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].setImage(1);
-                    this.matrix.setMatrix(matShips);
-                    this.matrix.draw(g);
+                    if (cont <= quantityOfShips - 1) {
+                        if (this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].getType() == 0) {
+                            this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].setType(1);
+                            this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].setImage(1);
+                            this.matrix.setMatrix(matShips);
+                            this.matrix.draw(g);
+                            cont++;
+                        }
+                    }
+
                 } catch (IOException ex) {
                     Logger.getLogger(JFrameClient.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -357,10 +375,16 @@ public class JFrameClient extends javax.swing.JFrame {
         } else if (size == 5) {
             if (evt.getX() < 350 && evt.getY() < 350) {
                 try {
-                    this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].setType(1);
-                    this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].setImage(1);
-                    this.matrix.setMatrix(matShips);
-                    this.matrix.draw(g);
+                    if (cont <= quantityOfShips - 1) {
+                        if (this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].getType() == 0) {
+                            this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].setType(1);
+                            this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].setImage(1);
+                            this.matrix.setMatrix(matShips);
+                            this.matrix.draw(g);
+                            cont++;
+                        }
+                    }
+
                 } catch (IOException ex) {
                     Logger.getLogger(JFrameClient.class.getName()).log(Level.SEVERE, null, ex);
                 }
