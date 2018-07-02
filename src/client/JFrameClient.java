@@ -1,4 +1,4 @@
-package chat_client;
+package client;
 
 import java.awt.Graphics;
 import java.io.*;
