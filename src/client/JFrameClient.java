@@ -102,9 +102,13 @@ public class JFrameClient extends javax.swing.JFrame {
             if (this.matrix.getMatrix()[y][x].getType() == 1) {
                 this.matrix.getMatrix()[y][x].setHealth(0);
                 this.matrix.draw(g);
+                send.println(username + ":" + "aaa" + ":" + "right");
+                send.flush(); // flushes the buffer
             } else if (this.matrix.getMatrix()[y][x].getType() == 2) {
                 this.matrix.getMatrix()[y][x].setHealth(this.matrix.getMatrix()[y][x].getHealth() - 1);
                 this.matrix.draw(g);
+                send.println(username + ":" + "aaa" + ":" + "right");
+                send.flush(); // flushes the buffer
             }
 
             this.matrix.draw(g);
@@ -121,9 +125,13 @@ public class JFrameClient extends javax.swing.JFrame {
             if (this.matrix.getMatrix()[y][x].getType() == 1) {
                 this.matrix.getMatrix()[y][x].setHealth(0);
                 this.matrix.draw(g);
+                send.println(username + ":" + "aaa" + ":" + "right");
+                send.flush(); // flushes the buffer
             } else if (this.matrix.getMatrix()[y][x].getType() == 2) {
                 this.matrix.getMatrix()[y][x].setHealth(this.matrix.getMatrix()[y][x].getHealth() - 1);
                 this.matrix.draw(g);
+                send.println(username + ":" + "aaa" + ":" + "right");
+                send.flush(); // flushes the buffer
             }
             this.matrix.draw(g);
         }
@@ -136,20 +144,28 @@ public class JFrameClient extends javax.swing.JFrame {
 
     public void end(String userLost) {
         if (userLost.equals(username)) {
-            textAreaChat.append("You lost" + "\n");
+            textAreaChat.append("---You lose---" + "\n");
             textAreaChat.setCaretPosition(textAreaChat.getDocument().getLength());
         } else {
-            textAreaChat.append("Won" + "\n");
+            textAreaChat.append("---Yow win---" + "\n");
             textAreaChat.setCaretPosition(textAreaChat.getDocument().getLength());
         }
         btnAttack.setEnabled(false);
     }
-    
+
     public void endTurn(String userEnd) {
         if (userEnd.equals(username)) {
             btnAttack.setEnabled(false);
         } else {
             btnAttack.setEnabled(true);
+        }
+    }
+
+    public void info(String userEnd) {
+        if (userEnd.equals(username)) {
+            textAreaChat.append("---Your ship was impacted---" + "\n");
+        } else {
+            textAreaChat.append("---You hit a ship---" + "\n");
         }
     }
 
@@ -174,7 +190,7 @@ public class JFrameClient extends javax.swing.JFrame {
         @Override
         public void run() {
             String[] data;
-            String stream, done = "Done", connect = "Connect", disconnect = "Disconnect", chat = "Chat", attack = "Attack", end = "END", turn = "fin";
+            String stream, done = "Done", connect = "Connect", disconnect = "Disconnect", chat = "Chat", attack = "Attack", end = "END", turn = "fin", info = "right";
 
             try {
                 while ((stream = reader.readLine()) != null) {
@@ -196,6 +212,8 @@ public class JFrameClient extends javax.swing.JFrame {
                         end(data[0]);
                     } else if (data[2].equals(turn)) {
                         endTurn(data[0]);
+                    } else if (data[2].equals(info)) {
+                        info(data[0]);
                     } else if (data[2].equals(done)) {
                         //users.setText("");
                         writeUsers();
