@@ -26,13 +26,17 @@ public class Missile extends Thread {
     int type;
     int yDes;
 
-    public Missile(int x, int y, int type ,int yDes) {
+    public Missile(int x, int y, int type, int yDes) {
         try {
             this.type = type;
             this.yDes = yDes;
             this.x = x;
             this.y = y;
-            this.image = ImageIO.read(getClass().getResourceAsStream("/assets/misil.png"));
+            if (this.type == 0) {
+                this.image = ImageIO.read(getClass().getResourceAsStream("/assets/misil.png"));
+            } else {
+                this.image = ImageIO.read(getClass().getResourceAsStream("/assets/misil_1.png"));
+            }
         } catch (IOException ex) {
             Logger.getLogger(Missile.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -78,7 +82,7 @@ public class Missile extends Thread {
                         this.exe = false;
                     }
                 }
-            }else {
+            } else {
                 while (this.y - 30 != yDes) {
                     super.sleep(10);
                     this.y++;
