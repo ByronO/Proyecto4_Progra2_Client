@@ -18,20 +18,22 @@ import java.util.logging.Logger;
  */
 public class Matrix {
     
-    int size;
+    int size, size2 = 70;
     Ship [][] matrix;
 
     public Matrix(int size) {
         this.size = size;
         matrix = new Ship[size][size];
-        System.out.println(size);
+        if(size == 3){
+            this.size2 = 116;
+        }
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
                 try {
                     this.matrix[i][j] = new Ship(0);
                     this.matrix[i][j].setImage(0);
-                    this.matrix[i][j].setX(i*70);
-                    this.matrix[i][j].setY(j*70);
+                    this.matrix[i][j].setX(i*size2);
+                    this.matrix[i][j].setY(j*size2);
                 } catch (IOException ex) {
                     Logger.getLogger(Matrix.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -68,18 +70,19 @@ public class Matrix {
     
     public void draw(Graphics g2){
         Graphics2D g2D = (Graphics2D) g2;
+        
         int x = 0, y = 0;
         for (int i = 0; i < this.size; i++) {
             for (int j = 0; j < this.size; j++) {
                 if(this.matrix[i][j].getType() == 0){
-                    g2D.drawRect(x, y, 70 , 70);
-                    x+=70;
+                    g2D.drawRect(x, y, size2 , size2);
+                    x+=size2;
                 }else {
-                    g2D.drawImage(this.matrix[i][j].getImage(), x, y, 70, 70, null);
-                    x+=70;
+                    g2D.drawImage(this.matrix[i][j].getImage(), x, y, size2, size2, null);
+                    x+=size2;
                 }
             }
-            y+=70;
+            y+=size2;
             x= 0;
         }
     }

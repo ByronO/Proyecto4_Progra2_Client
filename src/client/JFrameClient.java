@@ -1,6 +1,8 @@
 package client;
 
+import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.event.MouseEvent;
 import java.io.*;
 import java.net.Socket;
 import java.util.*;
@@ -13,9 +15,10 @@ import java.util.logging.Logger;
  */
 public class JFrameClient extends javax.swing.JFrame {
 
-    String username, address = "localhost";
+    String username;
+    String address;
     ArrayList<String> users = new ArrayList();
-    int port = 2222;
+    int port = 5000;
     Boolean isConnected = false;
 
     Socket sock;
@@ -26,7 +29,10 @@ public class JFrameClient extends javax.swing.JFrame {
     int quantityOfShips;
     Matrix matrix;
     Ship[][] matShips;
-    Graphics g;
+    Graphics g, g2;
+    int xAttack = 1000, yAttack = 1000;
+    int mother = 0;
+    int xMis, yMis;
 
     //--------------------------//
     public void ListenThread() {
@@ -65,7 +71,7 @@ public class JFrameClient extends javax.swing.JFrame {
     }
 
     //--------------------------//
-    public void Disconnect() {
+    public void disconnect() {
         try {
             textAreaChat.append("Disconnected.\n");
             sock.close();
@@ -77,12 +83,80 @@ public class JFrameClient extends javax.swing.JFrame {
 
     }
 
+    // Metodo para atacar que recibe las posiciones recibidas del servidor y compara a ver si se le acerto a una nave
+    public void attack(String position) {
+        String pos[] = position.split(",");
+        int x = Integer.parseInt(pos[0]);
+        int y = Integer.parseInt(pos[1]);
+
+        if (size == 3) {
+            int yDestino = y * 116;
+            Missile missile = new Missile((x * 116) + 50, 0, 1, yDestino);
+            missile.start();
+
+            while (missile.isExe()) {
+                missile.draw(g);
+
+            }
+            jPanel1.repaint(0, 0, 351, 351);
+            if (this.matrix.getMatrix()[y][x].getType() == 1) {
+                this.matrix.getMatrix()[y][x].setHealth(0);
+                this.matrix.draw(g);
+            } else if (this.matrix.getMatrix()[y][x].getType() == 2) {
+                this.matrix.getMatrix()[y][x].setHealth(this.matrix.getMatrix()[y][x].getHealth() - 1);
+                this.matrix.draw(g);
+            }
+
+            this.matrix.draw(g);
+        } else {
+            int yDestino = y * 70;
+            Missile missile = new Missile((x * 70) + 30, 0, 1, yDestino);
+            missile.start();
+
+            while (missile.isExe()) {
+                missile.draw(g);
+
+            }
+            jPanel1.repaint(0, 0, 351, 351);
+            if (this.matrix.getMatrix()[y][x].getType() == 1) {
+                this.matrix.getMatrix()[y][x].setHealth(0);
+                this.matrix.draw(g);
+            } else if (this.matrix.getMatrix()[y][x].getType() == 2) {
+                this.matrix.getMatrix()[y][x].setHealth(this.matrix.getMatrix()[y][x].getHealth() - 1);
+                this.matrix.draw(g);
+            }
+            this.matrix.draw(g);
+        }
+        if (this.matrix.getMatrix()[y][x].getType() == 2 && this.matrix.getMatrix()[y][x].getHealth() == 0) {
+            send.println(username + ":" + "loser" + ":" + "END");
+            send.flush(); // flushes the buffer
+        }
+
+    }
+
+    public void end(String userLost) {
+        if (userLost.equals(username)) {
+            textAreaChat.append("You lost" + "\n");
+            textAreaChat.setCaretPosition(textAreaChat.getDocument().getLength());
+        } else {
+            textAreaChat.append("Won" + "\n");
+            textAreaChat.setCaretPosition(textAreaChat.getDocument().getLength());
+        }
+        btnAttack.setEnabled(false);
+    }
+
     public JFrameClient() {
+
         initComponents();
+        address = "localhost";
         g = jPanel1.getGraphics();
+        g2 = jPanel2.getGraphics();
+        g.setColor(Color.white);
+        g2.setColor(Color.white);
         b_connect.setEnabled(false);
         b_disconnect.setEnabled(false);
         b_send.setEnabled(false);
+        btnAttack.setEnabled(false);
 
     }
 
@@ -92,7 +166,7 @@ public class JFrameClient extends javax.swing.JFrame {
         @Override
         public void run() {
             String[] data;
-            String stream, done = "Done", connect = "Connect", disconnect = "Disconnect", chat = "Chat";
+            String stream, done = "Done", connect = "Connect", disconnect = "Disconnect", chat = "Chat", attack = "Attack", end = "END";
 
             try {
                 while ((stream = reader.readLine()) != null) {
@@ -106,6 +180,13 @@ public class JFrameClient extends javax.swing.JFrame {
                         userAdd(data[0]);
                     } else if (data[2].equals(disconnect)) {
                         userRemove(data[0]);
+                    } else if (data[2].equals(attack)) {
+                        System.err.println(data[0]);
+                        if (!data[0].equals(username)) {
+                            attack(data[1]);
+                        }
+                    } else if (data[2].equals(end)) {
+                        end(data[0]);
                     } else if (data[2].equals(done)) {
                         //users.setText("");
                         writeUsers();
@@ -134,9 +215,15 @@ public class JFrameClient extends javax.swing.JFrame {
         jCBSize = new javax.swing.JComboBox<>();
         jButton1 = new javax.swing.JButton();
         jPanel1 = new javax.swing.JPanel();
+        jPanel2 = new javax.swing.JPanel();
+        lbl2 = new javax.swing.JLabel();
+        lbl = new javax.swing.JLabel();
+        lblPosition = new javax.swing.JLabel();
+        btnAttack = new javax.swing.JButton();
+        lblAd = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Chat - Client's frame");
+        setTitle("Player frame");
         setName("client"); // NOI18N
         setResizable(false);
 
@@ -184,6 +271,8 @@ public class JFrameClient extends javax.swing.JFrame {
             }
         });
 
+        jPanel1.setBackground(new java.awt.Color(51, 0, 51));
+        jPanel1.setPreferredSize(new java.awt.Dimension(351, 351));
         jPanel1.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 jPanel1MouseClicked(evt);
@@ -194,12 +283,47 @@ public class JFrameClient extends javax.swing.JFrame {
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 539, Short.MAX_VALUE)
+            .addGap(0, 351, Short.MAX_VALUE)
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
+            .addGap(0, 351, Short.MAX_VALUE)
         );
+
+        jPanel2.setBackground(new java.awt.Color(51, 0, 51));
+        jPanel2.setPreferredSize(new java.awt.Dimension(186, 186));
+        jPanel2.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jPanel2MouseClicked(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
+        jPanel2.setLayout(jPanel2Layout);
+        jPanel2Layout.setHorizontalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 186, Short.MAX_VALUE)
+        );
+        jPanel2Layout.setVerticalGroup(
+            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 186, Short.MAX_VALUE)
+        );
+
+        lbl2.setText(" Selected position:");
+
+        lbl.setText("Select the position to attack");
+
+        lblPosition.setText("   ");
+
+        btnAttack.setText("Attack");
+        btnAttack.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnAttackActionPerformed(evt);
+            }
+        });
+
+        lblAd.setForeground(new java.awt.Color(204, 0, 0));
+        lblAd.setText("   ");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -229,9 +353,22 @@ public class JFrameClient extends javax.swing.JFrame {
                         .addComponent(b_connect)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(b_disconnect)))
-                .addGap(44, 44, 44)
+                .addGap(50, 50, 50)
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(35, Short.MAX_VALUE))
+                .addGap(18, 18, 18)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(lbl, javax.swing.GroupLayout.PREFERRED_SIZE, 167, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(lbl2, javax.swing.GroupLayout.PREFERRED_SIZE, 111, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(lblPosition, javax.swing.GroupLayout.PREFERRED_SIZE, 64, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(jPanel2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(lblAd, javax.swing.GroupLayout.PREFERRED_SIZE, 118, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(btnAttack)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -255,7 +392,21 @@ public class JFrameClient extends javax.swing.JFrame {
                         .addComponent(jtfChat, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(layout.createSequentialGroup()
                         .addGap(27, 27, 27)
-                        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(lbl)
+                                .addGap(25, 25, 25)
+                                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(32, 32, 32)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                    .addComponent(lbl2)
+                                    .addComponent(lblPosition))
+                                .addGap(18, 18, 18)
+                                .addComponent(btnAttack, javax.swing.GroupLayout.PREFERRED_SIZE, 25, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(lblAd)))
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(b_send)
                 .addContainerGap())
@@ -282,7 +433,7 @@ public class JFrameClient extends javax.swing.JFrame {
                 String matrix = "";
                 for (int i = 0; i < size; i++) {
                     for (int j = 0; j < size; j++) {
-                        matrix+= String.valueOf(this.matrix.getMatrix()[i][j].getType());
+                        matrix += String.valueOf(this.matrix.getMatrix()[i][j].getType());
                     }
                 }
                 System.err.println(matrix);
@@ -292,6 +443,9 @@ public class JFrameClient extends javax.swing.JFrame {
                 send.println(username + ":has connected.:Connect");
                 send.flush();
                 isConnected = true;
+
+                btnAttack.setEnabled(true);
+
             } catch (Exception ex) {
                 textAreaChat.append("Cannot Connect! Try Again. \n");
                 tf_username.setEditable(true);
@@ -306,7 +460,7 @@ public class JFrameClient extends javax.swing.JFrame {
 
     private void b_disconnectActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_b_disconnectActionPerformed
         sendDisconnect();
-        Disconnect();
+        disconnect();
     }//GEN-LAST:event_b_disconnectActionPerformed
 
     private void b_sendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_b_sendActionPerformed
@@ -330,10 +484,12 @@ public class JFrameClient extends javax.swing.JFrame {
     }//GEN-LAST:event_b_sendActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        int size3 = 37;
         if (jCBSize.getSelectedItem().toString().equals("3x3")) {
             size = 3;
             quantityOfShips = 3;
-            size2 = 210;
+            size2 = 350;
+            size3 = 62;
         } else {
             size = 5;
             quantityOfShips = 5;
@@ -346,6 +502,17 @@ public class JFrameClient extends javax.swing.JFrame {
         this.matShips = this.matrix.getMatrix();
         this.matrix.draw(g);
 
+        int x = 0, y = 0;
+        for (int i = 0; i < this.size; i++) {
+            for (int j = 0; j < this.size; j++) {
+                g2.drawRect(x, y, size3, size3);
+                x += size3;
+            }
+            y += size3;
+            x = 0;
+
+        }
+
         jCBSize.setEnabled(false);
         b_connect.setEnabled(true);
         b_disconnect.setEnabled(true);
@@ -356,41 +523,123 @@ public class JFrameClient extends javax.swing.JFrame {
 
     private void jPanel1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jPanel1MouseClicked
         if (size == 3) {
-            if (evt.getX() < 210 && evt.getY() < 210) {
-                try {
-                    if (cont <= quantityOfShips - 1) {
-                        if (this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].getType() == 0) {
-                            this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].setType(1);
-                            this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].setImage(1);
-                            this.matrix.setMatrix(matShips);
-                            this.matrix.draw(g);
-                            cont++;
+            if (evt.getButton() == MouseEvent.BUTTON1) {
+                if (evt.getX() < 350 && evt.getY() < 350) {
+                    try {
+                        if (cont <= quantityOfShips - 1) {
+                            if (this.matShips[(evt.getY() / 116)][(evt.getX() / 116)].getType() == 0) {
+                                this.matShips[(evt.getY() / 116)][(evt.getX() / 116)].setType(1);
+                                this.matShips[(evt.getY() / 116)][(evt.getX() / 116)].setImage(1);
+                                this.matrix.setMatrix(matShips);
+                                this.matrix.draw(g);
+                                cont++;
+                            }
                         }
-                    }
 
-                } catch (IOException ex) {
-                    Logger.getLogger(JFrameClient.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (IOException ex) {
+                        Logger.getLogger(JFrameClient.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            } else {
+                if (evt.getX() < 350 && evt.getY() < 350) {
+                    try {
+                        if (cont <= quantityOfShips - 1 && mother == 0) {
+                            if (this.matShips[(evt.getY() / 116)][(evt.getX() / 116)].getType() == 0) {
+                                this.matShips[(evt.getY() / 116)][(evt.getX() / 116)].setType(2);
+                                this.matShips[(evt.getY() / 116)][(evt.getX() / 116)].setImage(2);
+                                this.yMis = (evt.getY() / 116) * 116 - 20;
+                                this.xMis = (evt.getX() / 116) * 116 + 53;
+                                this.matrix.setMatrix(matShips);
+                                this.matrix.draw(g);
+                                cont++;
+                                mother++;
+                            }
+                        }
+
+                    } catch (IOException ex) {
+                        Logger.getLogger(JFrameClient.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             }
         } else if (size == 5) {
-            if (evt.getX() < 350 && evt.getY() < 350) {
-                try {
-                    if (cont <= quantityOfShips - 1) {
-                        if (this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].getType() == 0) {
-                            this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].setType(1);
-                            this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].setImage(1);
-                            this.matrix.setMatrix(matShips);
-                            this.matrix.draw(g);
-                            cont++;
+            if (evt.getButton() == MouseEvent.BUTTON1) {
+                if (evt.getX() < 350 && evt.getY() < 350) {
+                    try {
+                        if (cont <= quantityOfShips - 1) {
+                            if (this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].getType() == 0) {
+                                this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].setType(1);
+                                this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].setImage(1);
+                                this.matrix.setMatrix(matShips);
+                                this.matrix.draw(g);
+                                cont++;
+                            }
                         }
-                    }
 
-                } catch (IOException ex) {
-                    Logger.getLogger(JFrameClient.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (IOException ex) {
+                        Logger.getLogger(JFrameClient.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            } else {
+                if (evt.getX() < 350 && evt.getY() < 350) {
+                    try {
+                        if (cont <= quantityOfShips - 1 && mother == 0) {
+                            if (this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].getType() == 0) {
+                                this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].setType(2);
+                                this.matShips[(evt.getY() / 70)][(evt.getX() / 70)].setImage(2);
+                                this.yMis = (evt.getY() / 70) * 70 - 20;
+                                this.xMis = (evt.getX() / 70) * 70 + 28;
+                                this.matrix.setMatrix(matShips);
+                                this.matrix.draw(g);
+                                cont++;
+                                mother++;
+                            }
+                        }
+
+                    } catch (IOException ex) {
+                        Logger.getLogger(JFrameClient.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             }
         }
     }//GEN-LAST:event_jPanel1MouseClicked
+
+    private void jPanel2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jPanel2MouseClicked
+        if (size == 3) {
+            this.xAttack = evt.getX() / 62;
+            this.yAttack = evt.getY() / 62;
+            this.lblPosition.setText(String.valueOf(xAttack + ", " + yAttack));
+
+        } else if (size == 5) {
+            this.xAttack = evt.getX() / 37;
+            this.yAttack = evt.getY() / 37;
+            this.lblPosition.setText(String.valueOf(xAttack + ", " + yAttack));
+        }
+
+    }//GEN-LAST:event_jPanel2MouseClicked
+
+    private void btnAttackActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAttackActionPerformed
+        if (xAttack == 1000) {
+            lblAd.setText("Select a position");
+        } else {
+            try {
+                Missile missile = new Missile(xMis, yMis, 0, 0);
+                missile.start();
+
+                while (missile.isExe()) {
+                    missile.draw(g);
+                    jPanel1.repaint(missile.getX(), missile.getY(), 15, 30);
+                }
+//                this.g = jPanel1.getGraphics();
+                this.matrix.draw(g);
+                send.println(username + ":" + String.valueOf(xAttack + "," + yAttack) + ":" + "Attack");
+                send.flush(); // flushes the buffer
+            } catch (Exception ex) {
+                textAreaChat.append("Message was not sent. \n");
+            }
+            jtfChat.setText("");
+            jtfChat.requestFocus();
+        }
+    }//GEN-LAST:event_btnAttackActionPerformed
 
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -405,13 +654,19 @@ public class JFrameClient extends javax.swing.JFrame {
     private javax.swing.JButton b_connect;
     private javax.swing.JButton b_disconnect;
     private javax.swing.JButton b_send;
+    private javax.swing.JButton btnAttack;
     private javax.swing.JButton jButton1;
     private javax.swing.JComboBox<String> jCBSize;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTextField jtfChat;
     private javax.swing.JLabel lb_username;
+    private javax.swing.JLabel lbl;
+    private javax.swing.JLabel lbl2;
+    private javax.swing.JLabel lblAd;
+    private javax.swing.JLabel lblPosition;
     private javax.swing.JTextArea textAreaChat;
     private javax.swing.JTextField tf_username;
     // End of variables declaration//GEN-END:variables
