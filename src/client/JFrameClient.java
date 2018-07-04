@@ -144,6 +144,14 @@ public class JFrameClient extends javax.swing.JFrame {
         }
         btnAttack.setEnabled(false);
     }
+    
+    public void endTurn(String userEnd) {
+        if (userEnd.equals(username)) {
+            btnAttack.setEnabled(false);
+        } else {
+            btnAttack.setEnabled(true);
+        }
+    }
 
     public JFrameClient() {
 
@@ -166,7 +174,7 @@ public class JFrameClient extends javax.swing.JFrame {
         @Override
         public void run() {
             String[] data;
-            String stream, done = "Done", connect = "Connect", disconnect = "Disconnect", chat = "Chat", attack = "Attack", end = "END";
+            String stream, done = "Done", connect = "Connect", disconnect = "Disconnect", chat = "Chat", attack = "Attack", end = "END", turn = "fin";
 
             try {
                 while ((stream = reader.readLine()) != null) {
@@ -181,12 +189,13 @@ public class JFrameClient extends javax.swing.JFrame {
                     } else if (data[2].equals(disconnect)) {
                         userRemove(data[0]);
                     } else if (data[2].equals(attack)) {
-                        System.err.println(data[0]);
                         if (!data[0].equals(username)) {
                             attack(data[1]);
                         }
                     } else if (data[2].equals(end)) {
                         end(data[0]);
+                    } else if (data[2].equals(turn)) {
+                        endTurn(data[0]);
                     } else if (data[2].equals(done)) {
                         //users.setText("");
                         writeUsers();
@@ -632,6 +641,8 @@ public class JFrameClient extends javax.swing.JFrame {
 //                this.g = jPanel1.getGraphics();
                 this.matrix.draw(g);
                 send.println(username + ":" + String.valueOf(xAttack + "," + yAttack) + ":" + "Attack");
+                send.flush(); // flushes the buffer
+                send.println(username + ":" + "End turn" + ":" + "fin");
                 send.flush(); // flushes the buffer
             } catch (Exception ex) {
                 textAreaChat.append("Message was not sent. \n");
